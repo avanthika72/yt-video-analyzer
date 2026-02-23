@@ -5,12 +5,12 @@ __pycache__/
 .venv/
 env/
 
-# Environment variables — never commit this
+# Environment
 .env
 
-# ChromaDB local storage
+# ChromaDB storage
 chroma_store/
 
-# OS files
+# Misc
 .DS_Store
 Thumbs.db

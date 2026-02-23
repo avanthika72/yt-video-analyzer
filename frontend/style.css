@@ -1,0 +1,100 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.container {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 760px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+.subtitle { color: #888; margin-bottom: 1.8rem; font-size: 0.95rem; }
+
+.input-section { display: flex; gap: 0.7rem; }
+
+input[type="text"] {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #252525;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.2s;
+}
+input[type="text"]:focus { border-color: #ff4444; }
+
+button {
+  padding: 0.75rem 1.4rem;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+button:hover { background: #e03333; }
+button:disabled { background: #555; cursor: not-allowed; }
+
+.status-msg {
+  margin-top: 0.9rem;
+  font-size: 0.9rem;
+  color: #aaa;
+  min-height: 1.2rem;
+}
+
+.chat-section { margin-top: 2rem; }
+.hidden { display: none; }
+
+.chat-box {
+  background: #111;
+  border-radius: 10px;
+  padding: 1rem;
+  height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+  border: 1px solid #2a2a2a;
+}
+
+.message {
+  max-width: 80%;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.message.user {
+  background: #ff4444;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+.message.bot {
+  background: #252525;
+  color: #ddd;
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+}
+.message.loading { color: #888; font-style: italic; }
+
+.chat-input-row { display: flex; gap: 0.7rem; }

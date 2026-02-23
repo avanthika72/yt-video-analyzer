@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YouTube Video Analyzer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 YouTube Video Analyzer</h1>
+    <p class="subtitle">Ask questions about any YouTube video</p>
+
+    <!-- URL Input -->
+    <div class="input-section">
+      <input type="text" id="videoUrl" placeholder="Paste YouTube URL here..." />
+      <button id="processBtn" onclick="processVideo()">Analyze Video</button>
+    </div>
+    <div id="processStatus" class="status-msg"></div>
+
+    <!-- Chat Section (hidden until video is processed) -->
+    <div id="chatSection" class="chat-section hidden">
+      <div id="chatBox" class="chat-box"></div>
+      <div class="chat-input-row">
+        <input type="text" id="questionInput" placeholder="Ask something about the video..." 
+               onkeydown="if(event.key==='Enter') askQuestion()" />
+        <button onclick="askQuestion()">Ask</button>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
