@@ -41,5 +41,9 @@ An AI-powered app to analyze YouTube videos and answer questions about them usin
    Visit: http://127.0.0.1:8000/static/index.html
    API docs: http://127.0.0.1:8000/docs
 
+## Requirements
+- Python 3.10 or 3.11 (recommended)
+- Do not use Python 3.13 (dependency compatibility issues)
+
 ## Tech Stack
 - FastAPI, ChromaDB, Sentence Transformers, LangChain, OpenAI GPT-4o-mini
