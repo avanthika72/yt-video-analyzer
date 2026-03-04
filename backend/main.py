@@ -6,6 +6,7 @@ from backend.transcript import extract_video_id, get_transcript
 from backend.embeddings import store_embeddings
 from backend.rag import answer_question
 from backend.cache import get_cached_video, cache_video, is_cached
+from backend.cleaner import clean_transcript
 
 app = FastAPI(title="YouTube Video Analyzer")
 
@@ -64,6 +65,7 @@ async def process_video(request: ProcessRequest):
 
     try:
         transcript = get_transcript(video_id)
+        transcript = clean_transcript(transcript)  # clean before embedding
     except RuntimeError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
