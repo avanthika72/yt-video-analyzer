@@ -77,8 +77,6 @@ async def process_video(request: ProcessRequest):
         transcript_preview=transcript[:300],
         message="Video processed successfully. You can now ask questions.",
     )
-
-
 @app.post("/ask", response_model=AskResponse)
 async def ask(request: AskRequest):
     if not is_cached(request.video_id):
@@ -92,3 +90,20 @@ async def ask(request: AskRequest):
         raise HTTPException(status_code=500, detail=f"QA failed: {str(e)}")
 
     return AskResponse(answer=answer)
+
+
+@app.post("/ask/details")
+async def ask_with_details(request: AskRequest):
+    """Returns answer plus full agent reasoning — useful for debugging."""
+    if not is_cached(request.video_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Video not found. Please process the video first.",
+        )
+    try:
+        from backend.agents import run_multi_agent_pipeline
+        result = run_multi_agent_pipeline(request.video_id, request.question)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent pipeline failed: {str(e)}")
+
+    return result

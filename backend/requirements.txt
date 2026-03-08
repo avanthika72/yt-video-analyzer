@@ -8,3 +8,4 @@ chromadb
 langchain
 langchain-text-splitters
 pydantic
+crewai
