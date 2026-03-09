@@ -110,3 +110,92 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") askQuestion();
   });
 });
+// ─── Voice Input (Speech to Text) ────────────────────────────────────────────
+
+let recognition = null;
+let isListening = false;
+
+function initSpeechRecognition() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    // browser doesn't support Web Speech API
+    const micBtn = document.getElementById("micBtn");
+    if (micBtn) {
+      micBtn.disabled = true;
+      micBtn.title = "Voice input not supported in this browser";
+      const note = document.createElement("div");
+      note.className = "mic-unsupported";
+      note.textContent = "⚠️ Voice input not supported. Use Chrome or Edge.";
+      micBtn.parentElement.appendChild(note);
+    }
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  // when speech is recognized — fill input and auto submit
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    const input = document.getElementById("questionInput");
+    input.value = transcript;
+    stopListening();
+    askQuestion(); // auto submit after voice input
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+    stopListening();
+    if (event.error === "not-allowed") {
+      appendMessage("bot", "⚠️ Microphone access denied. Please allow mic access in your browser settings.");
+    }
+  };
+
+  recognition.onend = () => {
+    stopListening();
+  };
+}
+
+function toggleMic() {
+  if (!recognition) {
+    appendMessage("bot", "⚠️ Voice input not supported. Please use Chrome or Edge.");
+    return;
+  }
+  if (isListening) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (!currentVideoId) {
+    appendMessage("bot", "⚠️ Please process a video first before using voice input.");
+    return;
+  }
+  isListening = true;
+  const micBtn = document.getElementById("micBtn");
+  micBtn.classList.add("listening");
+  micBtn.title = "Listening... click to stop";
+  recognition.start();
+}
+
+function stopListening() {
+  isListening = false;
+  const micBtn = document.getElementById("micBtn");
+  micBtn.classList.remove("listening");
+  micBtn.title = "Voice input";
+  try { recognition.stop(); } catch (e) {}
+}
+
+// initialize on page load
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("questionInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") askQuestion();
+  });
+  initSpeechRecognition();
+});
