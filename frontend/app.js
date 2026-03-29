@@ -38,11 +38,9 @@ async function processVideo() {
     const chatBox = document.getElementById("chatBox");
 
     // only show welcome message if chat is being opened fresh
-    if (chatSection.classList.contains("hidden")) {
-      chatSection.classList.remove("hidden");
-      chatBox.innerHTML = ""; // clear previous chat if re-processing
-      appendMessage("bot", "Video loaded! Ask me anything about it.");
-    }
+    chatSection.classList.remove("hidden");
+    chatBox.innerHTML = ""; // always clear chat when new video is processed
+    appendMessage("bot", "Video loaded! Ask me anything about it.");
 
   } catch (err) {
     statusEl.textContent = "❌ Could not connect to the backend. Is it running?";
@@ -109,4 +107,128 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("questionInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter") askQuestion();
   });
+});
+
+// ─── Voice Input (Speech to Text) ────────────────────────────────────────────
+
+let recognition = null;
+let isListening = false;
+
+function initSpeechRecognition() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    // browser doesn't support Web Speech API
+    const micBtn = document.getElementById("micBtn");
+    if (micBtn) {
+      micBtn.disabled = true;
+      micBtn.title = "Voice input not supported in this browser";
+      const note = document.createElement("div");
+      note.className = "mic-unsupported";
+      note.textContent = "⚠️ Voice input not supported. Use Chrome or Edge.";
+      micBtn.parentElement.appendChild(note);
+    }
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-IN";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  // when speech is recognized — fill input and auto submit
+  let silenceTimer = null;
+  
+  recognition.onresult = (event) => {
+    let finalTranscript = "";
+    let interimTranscript = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+
+    const input = document.getElementById("questionInput");
+    input.value = finalTranscript || interimTranscript;
+
+    // reset silence timer on every new word detected
+    if (silenceTimer) clearTimeout(silenceTimer);
+
+    // wait 1.5 seconds of silence after last word before submitting
+    silenceTimer = setTimeout(() => {
+      if (input.value.trim()) {
+        stopListening();
+        askQuestion();
+      }
+    }, 1500);
+  };
+
+    const input = document.getElementById("questionInput");
+    // show interim results in real time while speaking
+    input.value = finalTranscript || interimTranscript;
+
+    // only submit when final transcript is ready
+    if (finalTranscript) {
+      stopListening();
+      askQuestion();
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+    stopListening();
+    if (event.error === "not-allowed") {
+      appendMessage("bot", "⚠️ Microphone access denied. Please allow mic access in your browser settings.");
+    }
+  };
+
+  recognition.onend = () => {
+    stopListening();
+  };
+
+function toggleMic() {
+  if (!recognition) {
+    appendMessage("bot", "⚠️ Voice input not supported. Please use Chrome or Edge.");
+    return;
+  }
+  if (isListening) {
+    stopListening();
+  } else {
+    startListening();
+  }
+}
+
+function startListening() {
+  if (!currentVideoId) {
+    appendMessage("bot", "⚠️ Please process a video first before using voice input.");
+    return;
+  }
+  isListening = true;
+  const micBtn = document.getElementById("micBtn");
+  micBtn.classList.add("listening");
+  micBtn.title = "Listening... click to stop";
+  setTimeout(() => {
+    recognition.start();
+  }, 800);
+}
+
+function stopListening() {
+  isListening = false;
+  const micBtn = document.getElementById("micBtn");
+  micBtn.classList.remove("listening");
+  micBtn.title = "Voice input";
+  try { recognition.stop(); } catch (e) {}
+}
+
+// initialize on page load
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("questionInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") askQuestion();
+  });
+  initSpeechRecognition();
 });

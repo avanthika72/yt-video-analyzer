@@ -54,26 +54,29 @@ that is not in the chunks."""
 def run_validator_agent(question: str, organized_chunks: str) -> dict:
     """
     Validates whether the retrieved chunks contain sufficient
-    information to answer the question. Returns a verdict and reasoning.
+    information to answer the question.
     """
-    prompt = f"""You are a Validator Agent. Your job is to assess whether the 
-provided transcript excerpts contain enough information to answer the user's question.
+    prompt = f"""You are a Validator Agent. Assess whether the transcript excerpts contain ANY relevant information to answer the user's question, even partially.
 
-User Question: {question}
+    User Question: {question}
 
-Transcript Excerpts:
-{organized_chunks}
+    Transcript Excerpts:
+    {organized_chunks}
 
-Respond in this exact format:
-VERDICT: <SUFFICIENT or INSUFFICIENT>
-REASONING: <one sentence explaining your verdict>
-RELEVANT CONTENT: <quote the most relevant part of the excerpts, or say NONE>"""
+    - Return SUFFICIENT if the excerpts contain ANY related information
+    Rules:
+    - Return INSUFFICIENT only if the excerpts are completely unrelated
+    - Be lenient — partial information counts as SUFFICIENT
+
+    VERDICT: <SUFFICIENT or INSUFFICIENT>
+    Respond in this exact format:
+    REASONING: <one sentence>
+    RELEVANT CONTENT: <most relevant part or NONE>"""
 
     result = groq_llm(prompt)
 
-    # parse verdict from response
     verdict = "SUFFICIENT"
-    if "INSUFFICIENT" in result.upper():
+    if "VERDICT: INSUFFICIENT" in result.upper():
         verdict = "INSUFFICIENT"
 
     return {

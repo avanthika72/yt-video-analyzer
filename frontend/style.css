@@ -98,3 +98,27 @@ button:disabled { background: #555; cursor: not-allowed; }
 .message.loading { color: #888; font-style: italic; }
 
 .chat-input-row { display: flex; gap: 0.7rem; }
+
+#micBtn {
+  background: #333;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+#micBtn:hover { background: #444; }
+#micBtn.listening {
+  background: #ff4444;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.mic-unsupported {
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
