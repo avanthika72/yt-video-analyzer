@@ -38,11 +38,9 @@ async function processVideo() {
     const chatBox = document.getElementById("chatBox");
 
     // only show welcome message if chat is being opened fresh
-    if (chatSection.classList.contains("hidden")) {
-      chatSection.classList.remove("hidden");
-      chatBox.innerHTML = ""; // clear previous chat if re-processing
-      appendMessage("bot", "Video loaded! Ask me anything about it.");
-    }
+    chatSection.classList.remove("hidden");
+    chatBox.innerHTML = ""; // always clear chat when new video is processed
+    appendMessage("bot", "Video loaded! Ask me anything about it.");
 
   } catch (err) {
     statusEl.textContent = "❌ Could not connect to the backend. Is it running?";
@@ -135,17 +133,50 @@ function initSpeechRecognition() {
   }
 
   recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
+  recognition.lang = "en-IN";
+  recognition.continuous = true;
+  recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
   // when speech is recognized — fill input and auto submit
+  let silenceTimer = null;
+  
   recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
+    let finalTranscript = "";
+    let interimTranscript = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+
     const input = document.getElementById("questionInput");
-    input.value = transcript;
-    stopListening();
-    askQuestion(); // auto submit after voice input
+    input.value = finalTranscript || interimTranscript;
+
+    // reset silence timer on every new word detected
+    if (silenceTimer) clearTimeout(silenceTimer);
+
+    // wait 1.5 seconds of silence after last word before submitting
+    silenceTimer = setTimeout(() => {
+      if (input.value.trim()) {
+        stopListening();
+        askQuestion();
+      }
+    }, 1500);
+  };
+
+    const input = document.getElementById("questionInput");
+    // show interim results in real time while speaking
+    input.value = finalTranscript || interimTranscript;
+
+    // only submit when final transcript is ready
+    if (finalTranscript) {
+      stopListening();
+      askQuestion();
+    }
   };
 
   recognition.onerror = (event) => {
@@ -159,7 +190,6 @@ function initSpeechRecognition() {
   recognition.onend = () => {
     stopListening();
   };
-}
 
 function toggleMic() {
   if (!recognition) {
@@ -182,7 +212,9 @@ function startListening() {
   const micBtn = document.getElementById("micBtn");
   micBtn.classList.add("listening");
   micBtn.title = "Listening... click to stop";
-  recognition.start();
+  setTimeout(() => {
+    recognition.start();
+  }, 800);
 }
 
 function stopListening() {
