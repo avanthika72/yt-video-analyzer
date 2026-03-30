@@ -6,11 +6,12 @@ from backend.transcript import extract_video_id, get_transcript
 from backend.embeddings import store_embeddings
 from backend.rag import answer_question
 from backend.cache import get_cached_video, cache_video, is_cached
-from backend.cleaner import clean_transcript
+from backend.summarizer import summarize_transcript
+from backend.notes import generate_notes
+from backend.quiz import generate_quiz
 
 app = FastAPI(title="YouTube Video Analyzer")
 
-# Allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,18 +19,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend static files
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 
-# --- Request/Response Models ---
+# --- Models ---
 
 class ProcessRequest(BaseModel):
     url: str
 
 class ProcessResponse(BaseModel):
     video_id: str
-    transcript_preview: str  # First 300 chars for UI confirmation
+    transcript_preview: str
     message: str
 
 class AskRequest(BaseModel):
@@ -92,22 +92,14 @@ async def ask(request: AskRequest):
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
     if len(request.question.strip()) < 3:
-        raise HTTPException(
-            status_code=400,
-            detail="Question is too short. Please ask a complete question."
-        )
+        raise HTTPException(status_code=400, detail="Question is too short.")
 
     if len(request.question) > 500:
-        raise HTTPException(
-            status_code=400,
-            detail="Question is too long. Please keep it under 500 characters."
-        )
+        raise HTTPException(status_code=400, detail="Question too long. Keep under 500 characters.")
 
     if not is_cached(request.video_id):
-        raise HTTPException(
-            status_code=404,
-            detail="Video not found. Please process the video first.",
-        )
+        raise HTTPException(status_code=404, detail="Video not found. Please process the video first.")
+
     try:
         answer = answer_question(request.video_id, request.question)
     except Exception as e:
@@ -116,18 +108,58 @@ async def ask(request: AskRequest):
     return AskResponse(answer=answer)
 
 
-@app.post("/ask/details")
-async def ask_with_details(request: AskRequest):
-    """Returns answer plus full agent reasoning — useful for debugging."""
-    if not is_cached(request.video_id):
-        raise HTTPException(
-            status_code=404,
-            detail="Video not found. Please process the video first.",
-        )
+@app.post("/summarize")
+async def summarize(request: ProcessRequest):
     try:
-        from backend.agents import run_multi_agent_pipeline
-        result = run_multi_agent_pipeline(request.video_id, request.question)
+        video_id = extract_video_id(request.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not is_cached(video_id):
+        raise HTTPException(status_code=404, detail="Video not found. Please process the video first.")
+
+    cached = get_cached_video(video_id)
+    try:
+        result = summarize_transcript(cached["transcript"])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agent pipeline failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
 
     return result
+
+
+@app.post("/notes")
+async def notes(request: ProcessRequest):
+    try:
+        video_id = extract_video_id(request.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not is_cached(video_id):
+        raise HTTPException(status_code=404, detail="Video not found. Please process the video first.")
+
+    cached = get_cached_video(video_id)
+    try:
+        result = generate_notes(cached["transcript"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Notes generation failed: {str(e)}")
+
+    return result
+
+
+@app.post("/quiz")
+async def quiz(request: ProcessRequest):
+    try:
+        video_id = extract_video_id(request.url)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not is_cached(video_id):
+        raise HTTPException(status_code=404, detail="Video not found. Please process the video first.")
+
+    cached = get_cached_video(video_id)
+    try:
+        result = generate_quiz(cached["transcript"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Quiz generation failed: {str(e)}")
+
+    return {"questions": result}
