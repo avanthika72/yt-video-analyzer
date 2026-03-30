@@ -49,12 +49,14 @@ async def root():
 
 @app.post("/process", response_model=ProcessResponse)
 async def process_video(request: ProcessRequest):
+    if not request.url or not request.url.strip():
+        raise HTTPException(status_code=400, detail="URL cannot be empty.")
+
     try:
         video_id = extract_video_id(request.url)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Return cached result if already processed
     if is_cached(video_id):
         cached = get_cached_video(video_id)
         return ProcessResponse(
@@ -65,9 +67,14 @@ async def process_video(request: ProcessRequest):
 
     try:
         transcript = get_transcript(video_id)
-        transcript = clean_transcript(transcript)  # clean before embedding
     except RuntimeError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+    if len(transcript.split()) < 20:
+        raise HTTPException(
+            status_code=422,
+            detail="Transcript is too short to analyze meaningfully."
+        )
 
     store_embeddings(video_id, transcript)
     cache_video(video_id, {"transcript": transcript})
@@ -77,8 +84,25 @@ async def process_video(request: ProcessRequest):
         transcript_preview=transcript[:300],
         message="Video processed successfully. You can now ask questions.",
     )
+
+
 @app.post("/ask", response_model=AskResponse)
 async def ask(request: AskRequest):
+    if not request.question or not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+
+    if len(request.question.strip()) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Question is too short. Please ask a complete question."
+        )
+
+    if len(request.question) > 500:
+        raise HTTPException(
+            status_code=400,
+            detail="Question is too long. Please keep it under 500 characters."
+        )
+
     if not is_cached(request.video_id):
         raise HTTPException(
             status_code=404,
