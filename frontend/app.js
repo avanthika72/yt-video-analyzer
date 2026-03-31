@@ -189,7 +189,12 @@ function removeMessage(id) {
 }
 
 function escapeHtml(text) {
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  return String(text ?? "")
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
 }
 
 function getTime() {
@@ -246,15 +251,17 @@ async function generateSummary() {
     const data = await res.json();
     if (!res.ok) { el.textContent = `Error: ${data.detail}`; return; }
 
-    const topics = (data.key_topics || []).map(t => `<span class="topic-pill">${t}</span>`).join("");
+    const topics = (data.key_topics || []).map(t => `<span class="topic-pill">${escapeHtml(t)}</span>`).join("");
+    const safeSummary = escapeHtml(data.summary);
+    const safeQuickSummary = escapeHtml(data.quick_summary);
     el.innerHTML = `
       <div class="summary-card">
         <div class="summary-section-label">Summary</div>
-        <div class="summary-text">${data.summary}</div>
+        <div class="summary-text">${safeSummary}</div>
       </div>
       ${data.quick_summary ? `<div class="summary-card">
         <div class="summary-section-label">Quick summary</div>
-        <div class="summary-text">${data.quick_summary}</div>
+        <div class="summary-text">${safeQuickSummary}</div>
       </div>` : ""}
       <div class="summary-card">
         <div class="summary-section-label">Key topics</div>
@@ -283,19 +290,19 @@ async function generateNotes() {
     notesData = data;
     document.getElementById("downloadNotesBtn").style.display = "inline-block";
 
-    const bullets = (data.bullet_points || []).map(b => `<li>${b}</li>`).join("");
+    const bullets = (data.bullet_points || []).map(b => `<li>${escapeHtml(b)}</li>`).join("");
     const terms = (data.key_terms || []).map(t => `
       <div class="key-term-card">
-        <div class="key-term-name">${t.term}</div>
-        <div class="key-term-def">${t.definition}</div>
+        <div class="key-term-name">${escapeHtml(t.term)}</div>
+        <div class="key-term-def">${escapeHtml(t.definition)}</div>
       </div>`).join("");
     const facts = (data.important_facts || []).map(f => `
-      <div class="fact-item"><div class="fact-dot"></div>${f}</div>`).join("");
+      <div class="fact-item"><div class="fact-dot"></div>${escapeHtml(f)}</div>`).join("");
 
     el.innerHTML = `
       <div class="notes-section">
-        <div class="notes-title">${data.title || "Study Notes"}</div>
-        <div class="notes-summary">${data.summary || ""}</div>
+        <div class="notes-title">${escapeHtml(data.title || "Study Notes")}</div>
+        <div class="notes-summary">${escapeHtml(data.summary || "")}</div>
       </div>
       ${bullets ? `<div class="notes-section">
         <div class="section-label">Key points</div>
@@ -357,11 +364,11 @@ function renderQuiz(questions, el) {
 
   const html = questions.map((q, qi) => `
     <div class="quiz-question" id="quiz-q-${qi}">
-      <div class="quiz-q-text">${qi + 1}. ${q.question}</div>
+      <div class="quiz-q-text">${qi + 1}. ${escapeHtml(q.question)}</div>
       <div class="quiz-options">
         ${q.options.map((opt, oi) => `
           <button class="quiz-option" onclick="selectAnswer(${qi}, ${oi}, ${q.correct})" id="quiz-opt-${qi}-${oi}">
-            ${String.fromCharCode(65 + oi)}. ${opt}
+            ${String.fromCharCode(65 + oi)}. ${escapeHtml(opt)}
           </button>
         `).join("")}
       </div>

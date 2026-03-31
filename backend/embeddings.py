@@ -33,8 +33,9 @@ def store_embeddings(video_id: str, transcript: str) -> None:
     # Delete existing collection if re-processing the same video
     try:
         chroma_client.delete_collection(name=video_id)
-    except Exception:
-        pass
+    except Exception as e:
+        if "does not exist" not in str(e).lower():
+            raise RuntimeError(f"Failed to delete existing embedding collection for {video_id}: {e}") from e
 
     collection = chroma_client.create_collection(name=video_id)
     collection.add(
@@ -46,10 +47,16 @@ def store_embeddings(video_id: str, transcript: str) -> None:
 
 def retrieve_relevant_chunks(video_id: str, question: str, top_k: int = 5) -> list[str]:
     """Embed the question and retrieve the most relevant transcript chunks."""
-    collection = chroma_client.get_collection(name=video_id)
+    try:
+        collection = chroma_client.get_collection(name=video_id)
+    except Exception as e:
+        raise ValueError(f"No embeddings found for video '{video_id}'. Please process the video first.") from e
     question_embedding = model.encode([question]).tolist()
     results = collection.query(
         query_embeddings=question_embedding,
         n_results=top_k,
     )
-    return results["documents"][0]  # list of top_k chunk strings
+    documents = results.get("documents", [])
+    if not documents:
+        return []
+    return documents[0]  # list of top_k chunk strings

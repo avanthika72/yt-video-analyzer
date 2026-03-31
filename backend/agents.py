@@ -3,6 +3,11 @@ from backend.embeddings import retrieve_relevant_chunks
 import os
 from groq import Groq
 from dotenv import load_dotenv
+from backend.prompts import (
+    build_retriever_prompt,
+    build_validator_prompt,
+    build_response_prompt,
+)
 
 load_dotenv()
 
@@ -16,6 +21,8 @@ def groq_llm(prompt: str) -> str:
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
     )
+    if not response.choices or not response.choices[0].message or not response.choices[0].message.content:
+        raise ValueError("Agent model returned an empty response.")
     return response.choices[0].message.content
 
 
@@ -29,16 +36,7 @@ def run_retriever_agent(video_id: str, question: str) -> dict:
     chunks = retrieve_relevant_chunks(video_id, question, top_k=5)
     context = "\n\n".join(chunks)
 
-    prompt = f"""You are a Retriever Agent. Your job is to review the transcript 
-chunks retrieved for a user question and return them clearly organized.
-
-User Question: {question}
-
-Retrieved Transcript Chunks:
-{context}
-
-Return the chunks as-is, clearly numbered. Do not add any information 
-that is not in the chunks."""
+    prompt = build_retriever_prompt(question, context)
 
     result = groq_llm(prompt)
 
@@ -56,22 +54,7 @@ def run_validator_agent(question: str, organized_chunks: str) -> dict:
     Validates whether the retrieved chunks contain sufficient
     information to answer the question.
     """
-    prompt = f"""You are a Validator Agent. Assess whether the transcript excerpts contain ANY relevant information to answer the user's question, even partially.
-
-    User Question: {question}
-
-    Transcript Excerpts:
-    {organized_chunks}
-
-    - Return SUFFICIENT if the excerpts contain ANY related information
-    Rules:
-    - Return INSUFFICIENT only if the excerpts are completely unrelated
-    - Be lenient — partial information counts as SUFFICIENT
-
-    VERDICT: <SUFFICIENT or INSUFFICIENT>
-    Respond in this exact format:
-    REASONING: <one sentence>
-    RELEVANT CONTENT: <most relevant part or NONE>"""
+    prompt = build_validator_prompt(question, organized_chunks)
 
     result = groq_llm(prompt)
 
@@ -95,17 +78,7 @@ def run_response_agent(question: str, organized_chunks: str, verdict: str) -> st
     if verdict == "INSUFFICIENT":
         return "I couldn't find that information in the video."
 
-    prompt = f"""You are a Response Generator Agent. Your job is to generate a 
-clear, accurate answer to the user's question based strictly on the provided 
-transcript excerpts. Do not use any outside knowledge.
-
-User Question: {question}
-
-Verified Transcript Excerpts:
-{organized_chunks}
-
-Generate a helpful, well-structured answer using only the transcript content above.
-If something is partially covered, answer what you can and note the limitation."""
+    prompt = build_response_prompt(question, organized_chunks)
 
     return groq_llm(prompt)
 

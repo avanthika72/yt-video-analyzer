@@ -2,6 +2,7 @@ import os
 import json
 from groq import Groq
 from dotenv import load_dotenv
+from backend.prompts import build_summary_prompt
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -11,18 +12,7 @@ def summarize_transcript(transcript: str) -> dict:
     """Generate a structured summary and key topics from transcript."""
     truncated = transcript[:6000] if len(transcript) > 6000 else transcript
 
-    prompt = f"""You are a summarization assistant. Analyze this transcript.
-Respond ONLY with valid JSON, no extra text, no markdown backticks.
-
-Transcript:
-{truncated}
-
-Respond with exactly this JSON format:
-{{
-  "summary": "A clear 3-4 sentence summary",
-  "key_topics": ["topic 1", "topic 2", "topic 3", "topic 4", "topic 5"],
-  "quick_summary": "One sentence summary"
-}}"""
+    prompt = build_summary_prompt(truncated)
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -30,6 +20,8 @@ Respond with exactly this JSON format:
         temperature=0.2,
     )
 
+    if not response.choices or not response.choices[0].message or not response.choices[0].message.content:
+        raise ValueError("Summarizer model returned an empty response.")
     text = response.choices[0].message.content.strip()
     text = text.replace("```json", "").replace("```", "").strip()
 
@@ -40,9 +32,5 @@ Respond with exactly this JSON format:
             "key_topics": result.get("key_topics", []),
             "quick_summary": result.get("quick_summary", "")
         }
-    except Exception:
-        return {
-            "summary": text,
-            "key_topics": [],
-            "quick_summary": text[:100]
-        }
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON returned by summarizer: {e}") from e

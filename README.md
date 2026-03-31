@@ -29,7 +29,7 @@ An AI-powered app to analyze YouTube videos and answer questions about them usin
 4. Set up environment variables
 ```bash
    cp .env.example .env
-   # Open .env and add your OpenAI API key
+   # Open .env and add your GROQ API key
 ```
 
 5. Run the server
@@ -46,4 +46,9 @@ An AI-powered app to analyze YouTube videos and answer questions about them usin
 - Do not use Python 3.13 (dependency compatibility issues)
 
 ## Tech Stack
-- FastAPI, ChromaDB, Sentence Transformers, LangChain, OpenAI GPT-4o-mini
+- FastAPI, ChromaDB, Sentence Transformers, LangChain, Groq
+
+## Prompt Templates
+
+All LLM prompt templates are centralized in `backend/prompts.py`.
+The summarizer, notes generator, quiz generator, and multi-agent pipeline now import prompts from this file.
