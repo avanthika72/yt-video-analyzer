@@ -9,6 +9,7 @@ from backend.cache import get_cached_video, cache_video, is_cached
 from backend.summarizer import summarize_transcript
 from backend.notes import generate_notes
 from backend.quiz import generate_quiz
+import os
 
 app = FastAPI(title="YouTube Video Analyzer")
 
@@ -19,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")), name="static")
 
 
 # --- Models ---

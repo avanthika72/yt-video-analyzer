@@ -4,171 +4,188 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VideoAnalyzer — AI Video Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <!--
+    FAVICON: circular orange gradient, play triangle, dot-arc waveform
+    Matches the uploaded logo image exactly
+  -->
+  <link rel="icon" type="image/png" sizes="32x32" href="logo.png?v=2" />
+  <link rel="apple-touch-icon" sizes="180x180" href="logo.png" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- NAV -->
   <nav class="nav">
-    <div class="nav-logo">
-      <div class="logo-box">&#9654;</div>
+    <div class="nav-logo" onclick="showPage('home', document.querySelector('.nav-btn'))" title="Go home">
+      <img src="logo.png" alt="VideoAnalyzer Logo" class="logo-img" />
       <span>VideoAnalyzer</span>
     </div>
     <div class="nav-links">
       <button class="nav-btn active" onclick="showPage('home', this)">Home</button>
       <button class="nav-btn" onclick="showPage('analyzer', this)">Analyzer</button>
       <button class="nav-btn" onclick="showPage('history', this)">History</button>
-    </div>
+      <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+</div>
   </nav>
 
-  <!-- HOME PAGE -->
-  <div id="page-home" class="page active">
+  <!-- HOME -->
+  <div id="page-home" class="page">
     <div class="hero">
-      <div class="hero-tag">RAG + CrewAI Multi-Agent</div>
-      <h1>Ask anything about<br><span class="accent">any YouTube video</span></h1>
-      <p class="hero-sub">Extract transcripts, generate notes, take quizzes — all powered by AI agents working together.</p>
-      <div class="hero-btns">
-        <button class="btn-primary" onclick="showPage('analyzer', document.querySelectorAll('.nav-btn')[1])">Get started</button>
+      <div class="hero-bg-orb orb1"></div>
+      <div class="hero-bg-orb orb2"></div>
+      <div class="hero-tag animate-in" style="--d:0ms">RAG + CrewAI Multi-Agent</div>
+      <h1 class="animate-in" style="--d:60ms">Ask anything about <span class="accent">any YouTube video</span></h1>
+      <p class="hero-sub animate-in" style="--d:120ms">Transcripts, notes, quizzes — powered by AI agents.</p>
+      <div class="hero-url-row animate-in" style="--d:180ms; display:flex; justify-content:center; width:100%;">
+        <div class="hero-url-wrap" style="max-width:480px; width:100%;">
+          <svg class="hero-url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l-4 4l6 6l4-16l-16 4l6 6l4-4"/></svg>
+          <input type="text" id="heroUrl" placeholder="Paste a YouTube URL…" onkeydown="if(event.key==='Enter') goAnalyze()" />
+          <button onclick="goAnalyze()">Analyze</button>
+        </div>
       </div>
     </div>
+
     <div class="features-grid">
-      <div class="feature-card">
-        <div class="f-icon">&#128269;</div>
-        <div class="f-title">Semantic Q&A</div>
-        <div class="f-desc">Ask natural language questions, get answers grounded in video content</div>
+      <div class="feature-card animate-in" style="--d:80ms">
+        <div class="f-icon">🔍</div>
+        <div class="f-title">Semantic Q&amp;A</div>
+        <div class="f-desc">Ask natural questions, get answers from video content</div>
       </div>
-      <div class="feature-card">
-        <div class="f-icon">&#128221;</div>
+      <div class="feature-card animate-in" style="--d:120ms">
+        <div class="f-icon">📝</div>
         <div class="f-title">Auto notes</div>
-        <div class="f-desc">Generate structured study notes with key terms and important facts</div>
+        <div class="f-desc">Structured study notes with key terms and facts</div>
       </div>
-      <div class="feature-card">
-        <div class="f-icon">&#10067;</div>
+      <div class="feature-card animate-in" style="--d:160ms">
+        <div class="f-icon">❓</div>
         <div class="f-title">Quiz generator</div>
-        <div class="f-desc">Auto-generate MCQ quizzes from any video with instant scoring</div>
+        <div class="f-desc">MCQ quizzes from any video with instant scoring</div>
       </div>
-      <div class="feature-card">
-        <div class="f-icon">&#127908;</div>
+      <div class="feature-card animate-in" style="--d:200ms">
+        <div class="f-icon">🎤</div>
         <div class="f-title">Voice input</div>
-        <div class="f-desc">Speak your questions naturally with Indian English support</div>
+        <div class="f-desc">Speak questions with Indian English support</div>
       </div>
-      <div class="feature-card">
-        <div class="f-icon">&#128266;</div>
+      <div class="feature-card animate-in" style="--d:240ms">
+        <div class="f-icon">🔊</div>
         <div class="f-title">Voice output</div>
-        <div class="f-desc">Listen to AI answers read aloud with text-to-speech</div>
+        <div class="f-desc">Listen to AI answers read aloud</div>
       </div>
-      <div class="feature-card">
-        <div class="f-icon">&#129302;</div>
+      <div class="feature-card animate-in" style="--d:280ms">
+        <div class="f-icon">🤖</div>
         <div class="f-title">Multi-agent AI</div>
-        <div class="f-desc">CrewAI orchestrates Retriever, Validator and Generator agents</div>
+        <div class="f-desc">Retriever, Validator and Generator agents</div>
       </div>
     </div>
   </div>
 
-  <!-- ANALYZER PAGE -->
+  <!-- ANALYZER -->
   <div id="page-analyzer" class="page hidden">
-    <div class="analyzer-layout">
+    <div id="analyzerHero" class="analyzer-hero">
+      <div class="hero-bg-orb orb1"></div>
+      <div class="hero-bg-orb orb2"></div>
+      <h2 class="analyzer-hero-title">Drop a YouTube URL</h2>
+      <p class="analyzer-hero-sub">Paste any video link below to start analyzing</p>
+      <div class="hero-url-wrap large">
+        <svg class="hero-url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l-4 4l6 6l4-16l-16 4l6 6l4-4"/></svg>
+        <input type="text" id="videoUrl" placeholder="https://youtube.com/watch?v=…" onkeydown="if(event.key==='Enter') processVideo()" />
+        <button id="processBtn" onclick="processVideo()">Analyze</button>
+      </div>
+      <div id="processStatus" class="status-msg hidden"></div>
+    </div>
 
-      <!-- LEFT PANEL -->
-      <div class="left-panel">
-        <div class="card">
-          <div class="card-label">YouTube URL</div>
-          <div class="url-row">
-            <input type="text" id="videoUrl" class="url-input"
-              placeholder="Paste YouTube link here..."
-              onkeydown="if(event.key==='Enter') processVideo()" />
-            <button id="processBtn" class="btn-primary" onclick="processVideo()">Analyze</button>
-          </div>
-          <div id="processStatus" class="status-msg hidden"></div>
-        </div>
-
-        <!-- VIDEO PREVIEW -->
-        <div id="videoPreview" class="card hidden">
-          <div class="card-label">Video preview</div>
-          <div class="video-embed-wrapper">
-            <iframe id="videoFrame" src="" frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen></iframe>
-          </div>
-        </div>
-
-        <!-- SUGGESTED QUESTIONS -->
-        <div id="suggestedSection" class="card hidden">
-          <div class="card-label">Suggested questions</div>
-          <div class="suggested-pills">
-            <button class="suggest-btn" onclick="askSuggested(this)">What is this video about?</button>
-            <button class="suggest-btn" onclick="askSuggested(this)">Summarize in 5 lines</button>
-            <button class="suggest-btn" onclick="askSuggested(this)">Who are the key people mentioned?</button>
-            <button class="suggest-btn" onclick="askSuggested(this)">What are the main takeaways?</button>
-            <button class="suggest-btn" onclick="askSuggested(this)">Explain like I'm a beginner</button>
-          </div>
-        </div>
+    <div id="analyzerMain" class="analyzer-main hidden">
+      <div class="compact-url-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M15 10l-4 4l6 6l4-16l-16 4l6 6l4-4"/></svg>
+        <span id="compactUrlText" class="compact-url-text"></span>
+        <button class="compact-change-btn" onclick="resetAnalyzer()">Change video</button>
+        <div id="compactStatus" class="compact-status"></div>
       </div>
 
-      <!-- RIGHT PANEL -->
-      <div class="right-panel">
-        <div id="chatSection" class="card hidden">
-
-          <div class="tab-bar">
-            <button class="tab active" onclick="showTab('chat', this)">&#128172; Chat</button>
-            <button class="tab" onclick="showTab('summary', this)">&#128196; Summary</button>
-            <button class="tab" onclick="showTab('notes', this)">&#128221; Notes</button>
-            <button class="tab" onclick="showTab('quiz', this)">&#10067; Quiz</button>
-          </div>
-
-          <!-- CHAT TAB -->
-          <div id="tab-chat">
-            <div id="chatBox" class="chat-box"></div>
-            <div class="chat-input-row">
-              <input type="text" id="questionInput" class="chat-input"
-                placeholder="Ask something about the video..." />
-              <button class="icon-btn" id="micBtn" onclick="toggleMic()">&#127908;</button>
-              <button class="btn-primary small" onclick="askQuestion()">Ask</button>
+      <div class="analyzer-layout">
+        <div class="left-panel">
+          <div id="videoPreview" class="card hidden">
+            <div class="card-label">Video preview</div>
+            <div class="video-embed-wrapper">
+              <iframe id="videoFrame" src="" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
             </div>
           </div>
-
-          <!-- SUMMARY TAB -->
-          <div id="tab-summary" class="hidden tab-content">
-            <div class="tab-actions">
-              <button class="btn-outline" onclick="generateSummary()">Generate summary</button>
+          <div id="suggestedSection" class="card hidden">
+            <div class="card-label">Suggested questions</div>
+            <div class="suggested-pills">
+              <button class="suggest-btn" onclick="askSuggested(this)">What is this video about?</button>
+              <button class="suggest-btn" onclick="askSuggested(this)">Summarize in 5 lines</button>
+              <button class="suggest-btn" onclick="askSuggested(this)">Who are the key people mentioned?</button>
+              <button class="suggest-btn" onclick="askSuggested(this)">What are the main takeaways?</button>
+              <button class="suggest-btn" onclick="askSuggested(this)">Explain like I'm a beginner</button>
             </div>
-            <div id="summaryContent" class="placeholder-text">Click "Generate summary" to start.</div>
           </div>
+        </div>
 
-          <!-- NOTES TAB -->
-          <div id="tab-notes" class="hidden tab-content">
-            <div class="tab-actions">
-              <button class="btn-outline" onclick="generateNotes()">Generate notes</button>
-              <button class="btn-outline" onclick="downloadNotes()" id="downloadNotesBtn" style="display:none">Download notes</button>
+        <div class="right-panel">
+          <div id="chatSection" class="card hidden">
+            <div class="tab-bar">
+              <button class="tab active" onclick="showTab('chat', this)">💬 Chat</button>
+              <button class="tab" onclick="showTab('summary', this)">📄 Summary</button>
+              <button class="tab" onclick="showTab('notes', this)">📝 Notes</button>
+              <button class="tab" onclick="showTab('quiz', this)">❓ Quiz</button>
             </div>
-            <div id="notesContent" class="placeholder-text">Click "Generate notes" to start.</div>
-          </div>
-
-          <!-- QUIZ TAB -->
-          <div id="tab-quiz" class="hidden tab-content">
-            <div class="tab-actions">
-              <button class="btn-outline" onclick="generateQuiz()">Generate quiz</button>
+            <div id="tab-chat">
+              <div id="chatBox" class="chat-box"></div>
+              <div class="chat-input-row">
+                <input type="text" id="questionInput" class="chat-input" placeholder="Ask something about the video…" />
+                <button class="icon-btn" id="micBtn" onclick="toggleMic()" title="Voice input">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </button>
+                <button class="btn-primary small" onclick="askQuestion()">Ask</button>
+              </div>
             </div>
-            <div id="quizContent" class="placeholder-text">Click "Generate quiz" to start.</div>
+            <div id="tab-summary" class="hidden tab-content">
+              <div class="tab-actions"><button class="btn-outline" onclick="generateSummary()">Generate summary</button></div>
+              <div id="summaryContent" class="placeholder-text">Click "Generate summary" to start.</div>
+            </div>
+            <div id="tab-notes" class="hidden tab-content">
+              <div class="tab-actions">
+                <button class="btn-outline" onclick="generateNotes()">Generate notes</button>
+                <button class="btn-outline" onclick="downloadNotesPDF()" id="downloadNotesBtn" style="display:none">⬇ Download PDF</button>
+              </div>
+              <div id="notesContent" class="placeholder-text">Click "Generate notes" to start.</div>
+            </div>
+            <div id="tab-quiz" class="hidden tab-content">
+              <div class="tab-actions"><button class="btn-outline" onclick="generateQuiz()">Generate quiz</button></div>
+              <div id="quizContent" class="placeholder-text">Click "Generate quiz" to start.</div>
+            </div>
           </div>
-
         </div>
       </div>
     </div>
   </div>
 
-  <!-- HISTORY PAGE -->
+  <!-- HISTORY -->
   <div id="page-history" class="page hidden">
-    <div class="card" style="max-width:800px;margin:0 auto;">
-      <div class="history-header">
+    <div class="history-page">
+      <div class="history-page-header">
         <div>
-          <div class="card-label" style="font-size:16px;color:#fff;">Query history</div>
-          <div style="font-size:12px;color:#888;margin-top:4px;">All Q&A from this session</div>
+          <h2 class="history-page-title">Query History</h2>
+          <p class="history-page-sub">Click any video to resume its chat</p>
         </div>
-        <button class="btn-outline" onclick="downloadHistory()">Download</button>
       </div>
       <div id="historyList">
-        <div class="placeholder-text">No queries yet.</div>
+        <div class="history-empty">
+          <div class="history-empty-icon">📭</div>
+          <div>No videos analyzed yet.</div>
+          <button class="btn-primary" style="margin-top:1rem"
+            onclick="showPage('analyzer', document.querySelectorAll('.nav-btn')[1])">Analyze a video</button>
+        </div>
       </div>
     </div>
   </div>

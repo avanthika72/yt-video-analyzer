@@ -11,7 +11,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Persistent ChromaDB client
-chroma_client = chromadb.PersistentClient(path="./chroma_store")
+chroma_client = chromadb.PersistentClient(path=os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_store"))
 
 
 def chunk_transcript(transcript: str) -> list[str]:
@@ -24,32 +24,32 @@ def chunk_transcript(transcript: str) -> list[str]:
     return splitter.split_text(transcript)
 
 
+def safe_collection_name(video_id: str) -> str:
+    """Ensure collection name is valid for ChromaDB (must start/end with alphanumeric)."""
+    name = f"v{video_id}"  # prefix with 'v' to guarantee valid start
+    return name
+
+
 def store_embeddings(video_id: str, transcript: str) -> None:
-    """Chunk transcript, generate embeddings, and store in ChromaDB."""
     chunks = chunk_transcript(transcript)
     embeddings = model.encode(chunks).tolist()
-
-    # Use video_id as the collection name
-    # Delete existing collection if re-processing the same video
+    name = safe_collection_name(video_id)
     try:
-        chroma_client.delete_collection(name=video_id)
+        chroma_client.delete_collection(name=name)
     except Exception:
         pass
-
-    collection = chroma_client.create_collection(name=video_id)
+    collection = chroma_client.create_collection(name=name)
     collection.add(
         documents=chunks,
         embeddings=embeddings,
         ids=[f"{video_id}_chunk_{i}" for i in range(len(chunks))],
     )
 
-
 def retrieve_relevant_chunks(video_id: str, question: str, top_k: int = 5) -> list[str]:
-    """Embed the question and retrieve the most relevant transcript chunks."""
-    collection = chroma_client.get_collection(name=video_id)
+    collection = chroma_client.get_collection(name=safe_collection_name(video_id))
     question_embedding = model.encode([question]).tolist()
     results = collection.query(
         query_embeddings=question_embedding,
         n_results=top_k,
     )
-    return results["documents"][0]  # list of top_k chunk strings
+    return results["documents"][0]
