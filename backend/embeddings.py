@@ -11,8 +11,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # Persistent ChromaDB client
-chroma_client = chromadb.PersistentClient(path=os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_store"))
-
+chroma_client = chromadb.PersistentClient(path="./chroma_store")
 
 def chunk_transcript(transcript: str) -> list[str]:
     """Split transcript into overlapping chunks."""
